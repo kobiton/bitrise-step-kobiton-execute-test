@@ -147,13 +147,13 @@ inputs:
       value_options:
         - "android"
         - "ios"
-  - root_directory_input:
+  - root_directory_input: "/"
     opts:
       title: "Root directory"
       summary: Input the root directory of your Git repository.
       is_expand: true
       is_required: true
-  - command_input:
+  - command_input: "mvn test"
     opts:
       title: "Commands"
       summary: Command lines to install dependencies and execute your automation test script. These commands will run from the root directory of your Git repository.

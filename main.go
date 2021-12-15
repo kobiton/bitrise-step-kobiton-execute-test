@@ -11,6 +11,8 @@ import (
 	"github.com/kobiton/bitrise-step-kobiton-execute-test/utils"
 )
 
+const MAX_MS_WAIT_FOR_EXECUTION = 1 * 3600 * 1000 // 1 hour in miliseconds
+
 var jobId = ""
 var reportUrl = ""
 
@@ -31,9 +33,7 @@ func main() {
 
 	executorPayload := new(model.ExecutorRequestPayload)
 	model.BuildExecutorRequestPayload(executorPayload, stepConfig)
-
 	executorJsonPayload, _ := json.MarshalIndent(executorPayload, "", "   ")
-
 	client := utils.HttpClient()
 
 	var executorUrl = stepConfig.GetExecutorUrl() + "/submit"
@@ -43,36 +43,53 @@ func main() {
 	jobId = string(response)
 
 	if stepConfig.IsWaitForExecution() {
-		// var isJobFailed = false
+
 		log.Printf("Requesting to get logs for job %s", jobId)
+
 		var getJobInfoUrl = stepConfig.GetExecutorUrl() + "/jobs/" + jobId
 		var getJobLogUrl = getJobInfoUrl + "/logs?type=" + stepConfig.GetLogType()
 		var getReportUrl = getJobInfoUrl + "/report"
+		var isTimeout = false
 
 		ticker := time.NewTicker(30 * time.Second)
 		var authHeader = map[string]string{"authorization": "Basic " + executorBasicAuthEncoded}
 		var jobResponse model.JobResponse
+		var waitingBeginAt = time.Now().UnixMilli()
 
 		for range ticker.C {
 			var response = utils.SendRequest(client, "GET", getJobInfoUrl, authHeader, nil)
-			log.Printf(string(response))
 			json.Unmarshal(response, &jobResponse)
 			log.Println("Job Status: ", jobResponse.Status)
 
 			if jobResponse.Status == "COMPLETED" || jobResponse.Status == "FAILED" {
 				log.Printf("Job ID %s is finish with status: %s", jobId, jobResponse.Status)
 				break
+			} else {
+				var currentTime = time.Now().UnixMilli()
+
+				if currentTime-waitingBeginAt >= MAX_MS_WAIT_FOR_EXECUTION {
+					isTimeout = true
+					break
+				}
 			}
 		}
 		defer ticker.Stop()
 
-		var logResponse = utils.SendRequest(client, "GET", getJobLogUrl, authHeader, nil)
+		if isTimeout {
+			log.Println("==============================================================================")
+			log.Println("Execution has reached maximum waiting time")
+		} else {
+			var logResponse = utils.SendRequest(client, "GET", getJobLogUrl, authHeader, nil)
 
-		log.Println(string(logResponse))
+			log.Println("==============================================================================")
+			log.Println(string(logResponse))
 
-		var reportResponse = utils.SendRequest(client, "GET", getReportUrl, authHeader, nil)
-		reportUrl = string(reportResponse)
+			var reportResponse = utils.SendRequest(client, "GET", getReportUrl, authHeader, nil)
+			reportUrl = string(reportResponse)
+		}
 	}
+
+	log.Println("==============================================================================")
 
 	if jobId != "" {
 		log.Println("Job ID: ", jobId)
