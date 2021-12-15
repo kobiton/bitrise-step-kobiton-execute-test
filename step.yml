@@ -8,12 +8,12 @@
 # - Bitrise CLI guides: http://devcenter.bitrise.io/bitrise-cli/
 
 title: |-
-  Kobiton Execute Test
+  Execute Automation Test in Kobiton
 summary: |
-  Trigger a automation script on Kobiton Device
+  Execute an automation test script
 description: |
   A Bitrise step to (synchronously) execute an automated test script on Kobiton service
-website: https://github.com/kobiton/bitrise-step-kobiton-execute-test
+website: https://kobiton.com
 source_code_url: https://github.com/kobiton/bitrise-step-kobiton-execute-test
 support_url: https://github.com/kobiton/bitrise-step-kobiton-execute-test/issues
 
@@ -45,13 +45,13 @@ is_always_run: false
 is_skippable: false
 run_if: ""
 
-deps:
-  brew:
-  - name: git
-  - name: wget
-  apt_get:
-  - name: git
-  - name: wget
+# deps:
+#   brew:
+#   - name: git
+#   - name: wget
+#   apt_get:
+#   - name: git
+#   - name: wget
 
 
 toolkit:
@@ -62,62 +62,124 @@ toolkit:
 inputs:
   - kobi_username_input:
     opts:
-      title: "Example Step Input"
-      summary: Summary. No more than 2-3 sentences.
+      title: "Kobiton Username"
+      summary: Your username in Kobiton.
       is_expand: true
       is_required: true
   - kobi_apikey_input:
     opts:
-      title: "Example Step Input"
-      summary: Summary. No more than 2-3 sentences.
+      title: "Kobiton API Key"
+      summary: Your API key in Kobiton.
+      is_expand: true
+      is_required: true
+      is_sensitive: true
+  - executor_url_input:
+    opts:
+      title: "Executor Server URL"
+      summary: Kobiton Automation Test Executor URL.
       is_expand: true
       is_required: true
   - executor_username_input:
     opts:
-      title: "Example Step Input"
-      summary: Summary. No more than 2-3 sentences.
+      title: "Kobiton Executor Username"
+      summary: The Username for Kobiton Automation Test Executor.
       is_expand: true
       is_required: true
   - executor_password_input:
     opts:
-      title: "Example Step Input"
-      summary: Summary. No more than 2-3 sentences.
+      title: "Kobiton Executor Password"
+      summary: The Password Kobiton Automation Test Executor.
       is_expand: true
       is_required: true
+      is_sensitive: true
   - git_repo_url_input:
     opts:
-      title: "Example Step Input"
-      summary: Summary. No more than 2-3 sentences.
+      title: "Git repository URL"
+      summary: Link to your Git repository.
       is_expand: true
       is_required: true
   - git_repo_branch_input:
     opts:
-      title: "Example Step Input"
-      summary: Summary. No more than 2-3 sentences.
-      is_expand: true
-      is_required: true
-  - app_input:
-    opts:
-      title: "Example Step Input"
-      summary: Summary. No more than 2-3 sentences.
+      title: "Git repository branch"
+      summary: The branch of your Git repository you want to execute automation test with.
       is_expand: true
       is_required: true
   - git_repo_ssh_key_input:
     opts:
-      title: "Example Step Input"
-      summary: Summary. No more than 2-3 sentences.
+      title: "Git repository SSH key"
+      summary: This is required if your Git Repository is private.
+      is_expand: true
+      is_required: false
+      is_sensitive: true
+  - app_id_input:
+    opts:
+      title: "App ID"
+      summary: The App ID or App URL to use in your test script.
       is_expand: true
       is_required: true
+  - use_custom_device_input: "false"
+    opts:
+      category: Custom device
+      title: "Use Custom Device"
+      summary: Check if you want to execute one or some test cases with a specific Kobiton Cloud Device. If you already set your device information in your test script, leave this field unchecked.
+      is_expand: true
+      value_options:
+        - "true"
+        - "false"
+  - device_name_input:
+    opts:
+      category: Custom device
+      title: "Kobiton Cloud Device Name"
+      summary: This value will be consumed by the `KOBITON_DEVICE_NAME` environment variable in your test script.
+      is_expand: true
+  - device_platform_version_input:
+    opts:
+      category: Custom device
+      title: "Device platform version"
+      summary: This value will be consumed by the `KOBITON_SESSION_PLATFORM_VERSION` environment variable in your test script.
+      is_expand: true
+  - device_platform_input: "android"
+    opts:
+      category: Custom device
+      title: "Device platform"
+      summary: This value will be consumed by the `KOBITON_DEVICE_PLATFORM_NAME` environment variable in your test script.
+      is_expand: true
+      value_options:
+        - "android"
+        - "ios"
+  - root_directory_input:
+    opts:
+      title: "Root directory"
+      summary: Input the root directory of your Git repository.
+      is_expand: true
+      is_required: true
+  - command_input:
+    opts:
+      title: "Commands"
+      summary: Command lines to install dependencies and execute your automation test script. These commands will run from the root directory of your Git repository.
+      is_expand: true
+      is_required: true
+  - wait_for_execution_input: "true"
+    opts:
+      title: "Wait for execution"
+      summary: Check if your want the release pipeline to wait until your automation testing is completed or failed, then print out the console log and test result.
+      is_expand: true
+      is_required: true
+      value_options:
+        - "true"
+        - "false"
+  - log_type_input: "combined"
+    opts:
+      title: "Log type"
+      summary: Your desired log type to be showed. Choose Combined to show logs in chronological order, or Separated for single type of log (Ouput or Error).
+      is_expand: true
+      is_required: true
+      value_options:
+        - "combined"
+        - "output"
+        - "error"
 
 outputs:
-  - SESSION_ID:
-    opts:
-      title: "Kobiton Session ID"
-      summary: Summary. No more than 2-3 sentences.
-      description: |
-        Description of this output.
-
-        Can be Markdown formatted text.
   - JOB_ID:
     opts:
       title: "Executor Job ID"

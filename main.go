@@ -1,24 +1,93 @@
 package main
 
 import (
-	"fmt"
+	"encoding/json"
+	"log"
 	"os"
-	"os/exec"
+	"strings"
+	"time"
+
+	"github.com/kobiton/bitrise-step-kobiton-execute-test/model"
+	"github.com/kobiton/bitrise-step-kobiton-execute-test/utils"
 )
 
-func main() {
-	fmt.Println("This is the value specified for the input 'example_step_input':", os.Getenv("example_step_input"))
+var jobId = ""
+var reportUrl = ""
 
+func main() {
+
+	stepConfig := new(model.StepConfig)
+	stepConfig.Init()
+
+	var executorBasicAuth = strings.Join([]string{stepConfig.GetExecutorUsername(), stepConfig.GetExecutorPassword()}, ":")
+	var executorBasicAuthEncoded = utils.Base64Encode(executorBasicAuth)
+
+	var headers = map[string]string{}
+	headers["x-kobiton-credential-username"] = stepConfig.GetKobiUsername()
+	headers["x-kobiton-credential-api-key"] = stepConfig.GetKobiPassword()
+	headers["authorization"] = "Basic " + executorBasicAuthEncoded
+	headers["content-type"] = "application/json"
+	headers["accept"] = "application/json"
+
+	executorPayload := new(model.ExecutorRequestPayload)
+	model.BuildExecutorRequestPayload(executorPayload, stepConfig)
+
+	executorJsonPayload, _ := json.MarshalIndent(executorPayload, "", "   ")
+
+	client := utils.HttpClient()
+
+	var executorUrl = stepConfig.GetExecutorUrl() + "/submit"
+
+	var response = utils.SendRequest(client, "POST", executorUrl, headers, executorJsonPayload)
+
+	jobId = string(response)
+
+	if stepConfig.IsWaitForExecution() {
+		// var isJobFailed = false
+		log.Printf("Requesting to get logs for job %s", jobId)
+		var getJobInfoUrl = stepConfig.GetExecutorUrl() + "/jobs/" + jobId
+		var getJobLogUrl = getJobInfoUrl + "/logs?type=" + stepConfig.GetLogType()
+		var getReportUrl = getJobInfoUrl + "/report"
+
+		ticker := time.NewTicker(30 * time.Second)
+		var authHeader = map[string]string{"authorization": "Basic " + executorBasicAuthEncoded}
+		var jobResponse model.JobResponse
+
+		for range ticker.C {
+			var response = utils.SendRequest(client, "GET", getJobInfoUrl, authHeader, nil)
+			log.Printf(string(response))
+			json.Unmarshal(response, &jobResponse)
+			log.Println("Job Status: ", jobResponse.Status)
+
+			if jobResponse.Status == "COMPLETED" || jobResponse.Status == "FAILED" {
+				log.Printf("Job ID %s is finish with status: %s", jobId, jobResponse.Status)
+				break
+			}
+		}
+		defer ticker.Stop()
+
+		var logResponse = utils.SendRequest(client, "GET", getJobLogUrl, authHeader, nil)
+
+		log.Println(string(logResponse))
+
+		var reportResponse = utils.SendRequest(client, "GET", getReportUrl, authHeader, nil)
+		reportUrl = string(reportResponse)
+	}
+
+	if jobId != "" {
+		log.Println("Job ID: ", jobId)
+	}
+
+	if reportUrl != "" {
+		log.Println("Report URL: ", reportUrl)
+	}
 	//
 	// --- Step Outputs: Export Environment Variables for other Steps:
 	// You can export Environment Variables for other Steps with
 	//  envman, which is automatically installed by `bitrise setup`.
 	// A very simple example:
-	cmdLog, err := exec.Command("bitrise", "envman", "add", "--key", "EXAMPLE_STEP_OUTPUT", "--value", "the value you want to share").CombinedOutput()
-	if err != nil {
-		fmt.Printf("Failed to expose output with envman, error: %#v | output: %s", err, cmdLog)
-		os.Exit(1)
-	}
+	utils.ExposeEnv("JOB_ID", jobId)
+	utils.ExposeEnv("REPORT_URL", reportUrl)
 	// You can find more usage examples on envman's GitHub page
 	//  at: https://github.com/bitrise-io/envman
 
