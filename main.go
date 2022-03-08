@@ -54,7 +54,7 @@ func main() {
 		ticker := time.NewTicker(30 * time.Second)
 		var authHeader = map[string]string{"authorization": "Basic " + executorBasicAuthEncoded}
 		var jobResponse model.JobResponse
-		var waitingBeginAt = time.Now().UnixMilli()
+		var waitingBeginAt = time.Now().UnixNano() / int64(time.Millisecond)
 
 		for range ticker.C {
 			var response = utils.SendRequest(client, "GET", getJobInfoUrl, authHeader, nil)
@@ -65,7 +65,7 @@ func main() {
 				log.Printf("Job ID %s is finish with status: %s", jobId, jobResponse.Status)
 				break
 			} else {
-				var currentTime = time.Now().UnixMilli()
+				var currentTime = time.Now().UnixNano() / int64(time.Millisecond)
 
 				if currentTime-waitingBeginAt >= MAX_MS_WAIT_FOR_EXECUTION {
 					isTimeout = true
