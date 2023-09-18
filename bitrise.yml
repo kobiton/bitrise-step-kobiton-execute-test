@@ -44,12 +44,13 @@ workflows:
         - executor_username_input: kobiton-demo
         - git_repo_url_input: https://github.com/Nhattd97/azure-devops-sample-java-prod.git
         - git_repo_branch_input: master
-        - app_id_input: kobiton-store:91041
+        - app_input: kobiton-store:91041
         - root_directory_input: "/"
         - command_input: mvn test
         - kobi_apikey_input: "$KOB_APIKEY_PROD"
         - executor_password_input: "$EXECUTOR_PASSWORD"
         - kobi_username_input: thuongdo3
+        - scriptless_automation: false
     - script:
         inputs:
         - content: |
