@@ -14,7 +14,7 @@ type StepConfig struct {
 	gitRepoUrl            string
 	gitRepoBranch         string
 	gitSSHKey             string
-	kobiAppId             string
+	app                   string
 	useCustomDevice       bool
 	deviceName            string
 	devicePlatformVersion string
@@ -23,6 +23,9 @@ type StepConfig struct {
 	commands              string
 	waitForExecution      bool
 	logType               string
+	scriptlessAutomation  bool
+	deviceBundle          string
+	scriptlessTimeout     int64
 }
 
 func (stepConfig *StepConfig) Init() {
@@ -35,7 +38,7 @@ func (stepConfig *StepConfig) Init() {
 	stepConfig.gitRepoUrl = os.Getenv("git_repo_url_input")
 	stepConfig.gitRepoBranch = os.Getenv("git_repo_branch_input")
 	stepConfig.gitSSHKey = os.Getenv("git_repo_ssh_key_input")
-	stepConfig.kobiAppId = os.Getenv("app_id_input")
+	stepConfig.app = os.Getenv("app_input")
 	stepConfig.useCustomDevice, _ = strconv.ParseBool(os.Getenv("use_custom_device_input"))
 	stepConfig.deviceName = os.Getenv("device_name_input")
 	stepConfig.devicePlatformVersion = os.Getenv("device_platform_version_input")
@@ -43,6 +46,9 @@ func (stepConfig *StepConfig) Init() {
 	stepConfig.rootDirectory = os.Getenv("root_directory_input")
 	stepConfig.commands = os.Getenv("command_input")
 	stepConfig.waitForExecution, _ = strconv.ParseBool(os.Getenv("wait_for_execution_input"))
+	stepConfig.scriptlessAutomation, _ = strconv.ParseBool(os.Getenv("scriptless_automation"))
+	stepConfig.deviceBundle = os.Getenv("device_bundle")
+	stepConfig.scriptlessTimeout, _ = strconv.ParseInt(os.Getenv("scriptless_timeout"), 10, 64)
 
 	switch os.Getenv("log_type_input") {
 	case "output":
@@ -86,8 +92,8 @@ func (stepConfig *StepConfig) GetGitSSHKey() string {
 	return stepConfig.gitSSHKey
 }
 
-func (stepConfig *StepConfig) GetKobiAppId() string {
-	return stepConfig.kobiAppId
+func (stepConfig *StepConfig) GetApp() string {
+	return stepConfig.app
 }
 
 func (stepConfig *StepConfig) IsUseCustomDevices() bool {
@@ -120,4 +126,16 @@ func (stepConfig *StepConfig) IsWaitForExecution() bool {
 
 func (stepConfig *StepConfig) GetLogType() string {
 	return stepConfig.logType
+}
+
+func (stepConfig *StepConfig) GetScriptlessAutomation() bool {
+	return stepConfig.scriptlessAutomation
+}
+
+func (stepConfig *StepConfig) GetScriptlessTimeout() int64 {
+	return stepConfig.scriptlessTimeout
+}
+
+func (stepConfig *StepConfig) GetDeviceBundle() string {
+	return stepConfig.deviceBundle
 }
