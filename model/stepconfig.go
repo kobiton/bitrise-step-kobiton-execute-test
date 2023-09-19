@@ -49,6 +49,9 @@ func (stepConfig *StepConfig) Init() {
 	stepConfig.scriptlessAutomation, _ = strconv.ParseBool(os.Getenv("scriptless_automation"))
 	stepConfig.deviceBundle = os.Getenv("device_bundle")
 	stepConfig.scriptlessTimeout, _ = strconv.ParseInt(os.Getenv("scriptless_timeout"), 10, 64)
+	if stepConfig.scriptlessTimeout == 0 {
+		stepConfig.scriptlessTimeout = 60 * 60
+	}
 
 	switch os.Getenv("log_type_input") {
 	case "output":
