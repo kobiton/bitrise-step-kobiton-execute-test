@@ -51,6 +51,7 @@ workflows:
         - executor_password_input: "$EXECUTOR_PASSWORD"
         - kobi_username_input: thuongdo3
         - scriptless_automation: false
+        - scriptless_timeout: 3600
     - script:
         inputs:
         - content: |
