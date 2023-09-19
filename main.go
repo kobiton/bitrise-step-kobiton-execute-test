@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -133,6 +134,8 @@ func runScriptless(stepConfig *model.StepConfig) {
 			}
 		}
 
+		log.Println("Scriptless Status: ", scriptlessResponse.Status)
+
 		if scriptlessResponse.Status == "COMPLETED" {
 			break
 		} else {
@@ -147,17 +150,19 @@ func runScriptless(stepConfig *model.StepConfig) {
 
 	defer scriptlessTicker.Stop()
 
+	utils.ExposeEnv("SCRIPTLESS_PASSED", strconv.FormatBool(
+		!isTimeout && scriptlessResponse != nil && scriptlessResponse.Error == ""))
 	if isTimeout {
-		log.Println("Scriptless is timeout")
+		log.Println("Scriptless testing is timeout")
 	} else {
 		if scriptlessResponse == nil {
-			log.Println("Cannot get scriptless status")
+			log.Println("Cannot get scriptless testing status")
 			return
 		}
 
 		var errorMessage = scriptlessResponse.Error
 		if errorMessage == "" {
-			log.Println("Scriptless is success")
+			log.Println("Scriptless testing is passed")
 			fileUrl := stepConfig.GetExecutorUrl() + "/" + jobId + "/scriptless-report.html"
 			println("Start downloading scriptless report from URL: " + fileUrl)
 			var reportFilePath = os.Getenv("BITRISE_DEPLOY_DIR") + "/scriptless-report.html"
@@ -169,7 +174,7 @@ func runScriptless(stepConfig *model.StepConfig) {
 				log.Println(downloadError)
 			}
 		} else {
-			log.Println("Scriptless is failed with error: " + errorMessage)
+			log.Println("Scriptless testing is failed with error: " + errorMessage)
 		}
 	}
 }
