@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
+	"os/exec"
 	"time"
 )
 
@@ -48,12 +50,11 @@ func SendRequest(client *http.Client, method string, url string, headers map[str
 }
 
 func ExposeEnv(key string, value string) {
-	// TODO revert this
-	//cmdLog, err := exec.Command("bitrise", "envman", "add", "--key", key, "--value", value).CombinedOutput()
-	//if err != nil {
-	//	log.Printf("Failed to expose output with envman, error: %#v | output: %s", err, cmdLog)
-	//	os.Exit(1)
-	//}
+	cmdLog, err := exec.Command("bitrise", "envman", "add", "--key", key, "--value", value).CombinedOutput()
+	if err != nil {
+		log.Printf("Failed to expose output with envman, error: %#v | output: %s", err, cmdLog)
+		os.Exit(1)
+	}
 }
 
 func Base64Encode(data string) string {
