@@ -229,6 +229,6 @@ func setEnv() {
 	os.Setenv("command_input", "mvn test")
 	os.Setenv("wait_for_execution_input", "true")
 	os.Setenv("scriptless_automation", "true")
-	os.Setenv("device_bundle", "20")
+	os.Setenv("device_bundle", "9999")
 	os.Setenv("scriptless_timeout", "300")
 }
