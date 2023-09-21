@@ -150,7 +150,7 @@ func runScriptless(stepConfig *model.StepConfig) {
 	defer scriptlessTicker.Stop()
 
 	utils.ExposeEnv("SCRIPTLESS_PASSED", strconv.FormatBool(
-		!isTimeout && scriptlessResponse != nil && scriptlessResponse.Error == ""))
+		!isTimeout && scriptlessResponse != nil && scriptlessResponse.Error == "" && scriptlessResponse.ExecutionsPassed))
 	if isTimeout {
 		log.Println("Scriptless testing is timeout")
 	} else {

@@ -40,9 +40,10 @@ type JobResponse struct {
 }
 
 type ScriptlessStatusResponse struct {
-	Status   string   `json:"status"`
-	Error    string   `json:"error"`
-	Messages []string `json:"messages"`
+	Status           string   `json:"status"`
+	Error            string   `json:"error"`
+	ExecutionsPassed bool     `json:"executionsPassed"`
+	Messages         []string `json:"messages"`
 }
 
 func BuildExecutorRequestPayload(e *ExecutorRequestPayload, s *StepConfig) {
