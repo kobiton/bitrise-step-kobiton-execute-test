@@ -113,7 +113,7 @@ func main() {
 }
 
 func runScriptless(stepConfig *model.StepConfig) {
-	log.Println("Start running scriptless testing...")
+	log.Println("INFO: Scriptless automation has begun...")
 
 	var isTimeout = false
 	var scriptlessResponse *model.ScriptlessStatusResponse
@@ -133,7 +133,7 @@ func runScriptless(stepConfig *model.StepConfig) {
 			}
 		}
 
-		log.Println("Scriptless Status: ", scriptlessResponse.Status)
+		log.Println("INFO: Scriptless automation is currently: ", scriptlessResponse.Status)
 
 		if scriptlessResponse.Status == "COMPLETED" {
 			break
@@ -152,28 +152,28 @@ func runScriptless(stepConfig *model.StepConfig) {
 	utils.ExposeEnv("SCRIPTLESS_PASSED", strconv.FormatBool(
 		!isTimeout && scriptlessResponse != nil && scriptlessResponse.Error == "" && scriptlessResponse.ExecutionsPassed))
 	if isTimeout {
-		log.Println("Scriptless testing is timeout")
+		log.Println("ERROR: Scriptless automation has reached a timeout.")
 	} else {
 		if scriptlessResponse == nil {
-			log.Println("Cannot get scriptless testing status")
+			log.Println("ERROR: Unable to retrieve scriptless automation status.")
 			return
 		}
 
 		var errorMessage = scriptlessResponse.Error
 		if errorMessage == "" {
-			log.Println("Scriptless testing is passed")
+			log.Println("INFO: Scriptless testing has passed.")
 			fileUrl := stepConfig.GetExecutorUrl() + "/" + jobId + "/test-report.html"
 			println("Start downloading scriptless report from URL: " + fileUrl)
 			var reportFilePath = os.Getenv("BITRISE_DEPLOY_DIR") + "/test-report.html"
 			downloadError := downloadFile(reportFilePath, fileUrl)
 			if downloadError == nil {
-				log.Println("Scriptless report is available at: " + reportFilePath)
+				log.Println("INFO: Test report is available at: " + reportFilePath)
 			} else {
-				log.Println("Upload report failed with error:")
+				log.Println("ERROR: Test report upload failed with error:")
 				log.Println(downloadError)
 			}
 		} else {
-			log.Println("Scriptless testing is failed with error: " + errorMessage)
+			log.Println("ERROR: Scriptless automation has failed with error: " + errorMessage)
 		}
 	}
 }
