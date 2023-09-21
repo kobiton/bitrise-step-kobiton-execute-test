@@ -113,7 +113,7 @@ func main() {
 }
 
 func runScriptless(stepConfig *model.StepConfig) {
-	log.Println("Check scriptless status...")
+	log.Println("Start running scriptless testing...")
 
 	var isTimeout = false
 	var scriptlessResponse *model.ScriptlessStatusResponse
