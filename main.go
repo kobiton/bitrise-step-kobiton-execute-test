@@ -48,7 +48,7 @@ func main() {
 		var jobResponse model.JobResponse
 		var waitingBeginAt = time.Now().UnixNano() / int64(time.Millisecond)
 
-		for range ticker.C {
+		for ; true; <-ticker.C {
 			var response = utils.SendRequest(client, "GET", getJobInfoUrl, headers, nil)
 			json.Unmarshal(response, &jobResponse)
 			log.Println("Job Status: ", jobResponse.Status)
@@ -123,7 +123,7 @@ func runScriptless(stepConfig *model.StepConfig) {
 	client := utils.HttpClient()
 	var headers = getRequestHeader(stepConfig)
 
-	for range scriptlessTicker.C {
+	for ; true; <-scriptlessTicker.C {
 		var response = utils.SendRequest(client, "GET", statusUrl, headers, nil)
 		json.Unmarshal(response, &scriptlessResponse)
 
