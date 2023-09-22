@@ -161,15 +161,22 @@ func runScriptless(stepConfig *model.StepConfig) {
 
 		var errorMessage = scriptlessResponse.Error
 		if errorMessage == "" {
-			log.Println("INFO: Scriptless testing has passed.")
+			var resultMessage string
+			if scriptlessResponse.ExecutionsPassed {
+				resultMessage = "Passed"
+			} else {
+				resultMessage = "Failed"
+			}
+
+			log.Println("INFO: Scriptless testing has completed, result: " + resultMessage)
 			fileUrl := stepConfig.GetExecutorUrl() + "/" + jobId + "/test-report.html"
-			println("Start downloading scriptless report from URL: " + fileUrl)
+			println("INFO: Start downloading test report from URL: " + fileUrl)
 			var reportFilePath = os.Getenv("BITRISE_DEPLOY_DIR") + "/test-report.html"
 			downloadError := downloadFile(reportFilePath, fileUrl)
 			if downloadError == nil {
-				log.Println("INFO: Test report is available at: " + reportFilePath)
+				log.Println("INFO: Download test report successfully." + reportFilePath)
 			} else {
-				log.Println("ERROR: Test report upload failed with error:")
+				log.Println("ERROR: Test report download failed with error:")
 				log.Println(downloadError)
 			}
 		} else {
