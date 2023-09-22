@@ -220,9 +220,9 @@ outputs:
 
         Can be Markdown formatted text.
 
-  - SCRIPTLESS_PASSED:
+  - SCRIPTLESS_AUTOMATION_PASSED:
     opts:
-      title: "Scriptless automation testing is passed"
+      title: "Scriptless automation testing is passed or not"
       summary: Summary. No more than 2-3 sentences.
       description: |
         Description of this output.
