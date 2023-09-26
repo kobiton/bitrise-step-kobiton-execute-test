@@ -111,10 +111,10 @@ inputs:
       is_expand: true
       is_required: false
       is_sensitive: true
-  - app_id_input:
+  - app_input:
     opts:
-      title: "App ID"
-      summary: The App ID or App URL to use in your test script.
+      title: "App"
+      summary: The App Path or App URL to use in your test script.
       is_expand: true
       is_required: true
   - use_custom_device_input: "false"
@@ -147,6 +147,29 @@ inputs:
       value_options:
         - "android"
         - "ios"
+  - scriptless_automation: "false"
+    opts:
+      category: Scriptless Automation
+      title: "Trigger Scriptless on multiple devices"
+      summary: Check whether you wish to initiate Scriptless execution of your test case across multiple devices by specifying a particular device bundle.
+      is_expand: true
+      value_options:
+        - "true"
+        - "false"
+  - device_bundle:
+    opts:
+      category: Scriptless Automation
+      title: "Kobiton Device Bundle"
+      summary: Specify the Kobiton Device Bundle ID.
+      is_expand: true
+
+  - scriptless_timeout:
+    opts:
+      category: Scriptless Automation
+      title: "Kobiton Scriptless Timeout"
+      summary: Specify the Kobiton Timeout in seconds.
+      is_expand: true
+
   - root_directory_input: "/"
     opts:
       title: "Root directory"
@@ -191,6 +214,15 @@ outputs:
   - REPORT_URL:
     opts:
       title: "TestNG Report URL"
+      summary: Summary. No more than 2-3 sentences.
+      description: |
+        Description of this output.
+
+        Can be Markdown formatted text.
+
+  - SCRIPTLESS_AUTOMATION_PASSED:
+    opts:
+      title: "Scriptless automation testing is passed or not"
       summary: Summary. No more than 2-3 sentences.
       description: |
         Description of this output.

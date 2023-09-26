@@ -2,13 +2,15 @@ package main
 
 import (
 	"encoding/json"
-	"log"
-	"os"
-	"strings"
-	"time"
-
 	"github.com/kobiton/bitrise-step-kobiton-execute-test/model"
 	"github.com/kobiton/bitrise-step-kobiton-execute-test/utils"
+	"io"
+	"log"
+	"net/http"
+	"os"
+	"strconv"
+	"strings"
+	"time"
 )
 
 const MAX_MS_WAIT_FOR_EXECUTION = 1 * 3600 * 1000 // 1 hour in miliseconds
@@ -17,19 +19,10 @@ var jobId = ""
 var reportUrl = ""
 
 func main() {
-
 	stepConfig := new(model.StepConfig)
 	stepConfig.Init()
 
-	var executorBasicAuth = strings.Join([]string{stepConfig.GetExecutorUsername(), stepConfig.GetExecutorPassword()}, ":")
-	var executorBasicAuthEncoded = utils.Base64Encode(executorBasicAuth)
-
-	var headers = map[string]string{}
-	headers["x-kobiton-credential-username"] = stepConfig.GetKobiUsername()
-	headers["x-kobiton-credential-api-key"] = stepConfig.GetKobiPassword()
-	headers["authorization"] = "Basic " + executorBasicAuthEncoded
-	headers["content-type"] = "application/json"
-	headers["accept"] = "application/json"
+	var headers = getRequestHeader(stepConfig)
 
 	executorPayload := new(model.ExecutorRequestPayload)
 	model.BuildExecutorRequestPayload(executorPayload, stepConfig)
@@ -52,12 +45,11 @@ func main() {
 		var isTimeout = false
 
 		ticker := time.NewTicker(30 * time.Second)
-		var authHeader = map[string]string{"authorization": "Basic " + executorBasicAuthEncoded}
 		var jobResponse model.JobResponse
 		var waitingBeginAt = time.Now().UnixNano() / int64(time.Millisecond)
 
-		for range ticker.C {
-			var response = utils.SendRequest(client, "GET", getJobInfoUrl, authHeader, nil)
+		for ; true; <-ticker.C {
+			var response = utils.SendRequest(client, "GET", getJobInfoUrl, headers, nil)
 			json.Unmarshal(response, &jobResponse)
 			log.Println("Job Status: ", jobResponse.Status)
 
@@ -79,13 +71,17 @@ func main() {
 			log.Println("==============================================================================")
 			log.Println("Execution has reached maximum waiting time")
 		} else {
-			var logResponse = utils.SendRequest(client, "GET", getJobLogUrl, authHeader, nil)
+			var logResponse = utils.SendRequest(client, "GET", getJobLogUrl, headers, nil)
 
 			log.Println("==============================================================================")
 			log.Println(string(logResponse))
 
-			var reportResponse = utils.SendRequest(client, "GET", getReportUrl, authHeader, nil)
+			var reportResponse = utils.SendRequest(client, "GET", getReportUrl, headers, nil)
 			reportUrl = string(reportResponse)
+
+			if stepConfig.GetScriptlessAutomation() {
+				runScriptless(stepConfig)
+			}
 		}
 	}
 
@@ -114,4 +110,106 @@ func main() {
 	//  with a 0 exit code `bitrise` will register your Step as "successful".
 	// Any non zero exit code will be registered as "failed" by `bitrise`.
 	os.Exit(0)
+}
+
+func runScriptless(stepConfig *model.StepConfig) {
+	log.Println("INFO: Scriptless automation has begun...")
+
+	var isTimeout = false
+	var scriptlessResponse *model.ScriptlessStatusResponse
+	var waitingBeginAt = time.Now().UnixNano() / int64(time.Millisecond)
+	var statusUrl = stepConfig.GetExecutorUrl() + "/jobs/" + jobId + "/scriptless/status"
+	scriptlessTicker := time.NewTicker(30 * time.Second)
+	client := utils.HttpClient()
+	var headers = getRequestHeader(stepConfig)
+
+	for ; true; <-scriptlessTicker.C {
+		var response = utils.SendRequest(client, "GET", statusUrl, headers, nil)
+		json.Unmarshal(response, &scriptlessResponse)
+
+		if len(scriptlessResponse.Messages) > 0 {
+			for _, message := range scriptlessResponse.Messages {
+				log.Println(message)
+			}
+		}
+
+		log.Println("INFO: Scriptless automation is currently: ", scriptlessResponse.Status)
+
+		if scriptlessResponse.Status == "COMPLETED" {
+			break
+		} else {
+			var currentTime = time.Now().UnixNano() / int64(time.Millisecond)
+
+			if currentTime-waitingBeginAt >= stepConfig.GetScriptlessTimeout()*1000 {
+				isTimeout = true
+				break
+			}
+		}
+	}
+
+	defer scriptlessTicker.Stop()
+
+	utils.ExposeEnv("SCRIPTLESS_AUTOMATION_PASSED", strconv.FormatBool(
+		!isTimeout && scriptlessResponse != nil && scriptlessResponse.Error == "" && scriptlessResponse.ExecutionsPassed))
+	if isTimeout {
+		log.Println("ERROR: Scriptless automation has reached a timeout.")
+	} else {
+		if scriptlessResponse == nil {
+			log.Println("ERROR: Unable to retrieve scriptless automation status.")
+			return
+		}
+
+		var errorMessage = scriptlessResponse.Error
+		if errorMessage == "" {
+			var resultMessage string
+			if scriptlessResponse.ExecutionsPassed {
+				resultMessage = "Passed"
+			} else {
+				resultMessage = "Failed"
+			}
+
+			log.Println("INFO: Scriptless testing has completed, result: " + resultMessage)
+			fileUrl := stepConfig.GetExecutorUrl() + "/" + jobId + "/test-report.html"
+			println("INFO: Start downloading test report from URL: " + fileUrl)
+			var reportFilePath = os.Getenv("BITRISE_DEPLOY_DIR") + "/test-report.html"
+			downloadError := downloadFile(reportFilePath, fileUrl)
+			if downloadError == nil {
+				log.Println("INFO: Download test report successfully." + reportFilePath)
+			} else {
+				log.Println("ERROR: Test report download failed with error:")
+				log.Println(downloadError)
+			}
+		} else {
+			log.Println("ERROR: Scriptless automation has failed with error: " + errorMessage)
+		}
+	}
+}
+
+func getRequestHeader(stepConfig *model.StepConfig) map[string]string {
+	var executorBasicAuth = strings.Join([]string{stepConfig.GetExecutorUsername(), stepConfig.GetExecutorPassword()}, ":")
+	var executorBasicAuthEncoded = utils.Base64Encode(executorBasicAuth)
+
+	var headers = map[string]string{}
+	headers["authorization"] = "Basic " + executorBasicAuthEncoded
+	headers["content-type"] = "application/json"
+	headers["accept"] = "application/json"
+
+	return headers
+}
+
+func downloadFile(filepath string, url string) error {
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	out, err := os.Create(filepath)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, resp.Body)
+	return err
 }
