@@ -13,7 +13,7 @@ type TestConfig struct {
 	Git           string   `json:"git"`
 	Ssh           string   `json:"ssh"`
 	Branch        string   `json:"branch"`
-	RootDirectory string   `json:"rootDirectory,omitempty`
+	RootDirectory string   `json:"rootDirectory,omitempty"`
 	Commands      []string `json:"commands"`
 }
 
