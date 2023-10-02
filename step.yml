@@ -8,9 +8,9 @@
 # - Bitrise CLI guides: http://devcenter.bitrise.io/bitrise-cli/
 
 title: |-
-  Execute Automation Test in Kobiton
+  Execute Automation Test on Kobiton
 summary: |
-  Execute an automation test script
+  Executes automation tests on the Kobiton Platform and seamlessly triggers Scriptless Automation across multiple devices, harnessing the power of AI without the need for additional scripting
 description: |
   A Bitrise step to (synchronously) execute an automated test script on Kobiton service
 website: https://kobiton.com
