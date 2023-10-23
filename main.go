@@ -187,6 +187,7 @@ func runScriptless(stepConfig *model.StepConfig) {
 
 func getRequestHeader(stepConfig *model.StepConfig) map[string]string {
 	var executorBasicAuth = strings.Join([]string{stepConfig.GetExecutorUsername(), stepConfig.GetExecutorPassword()}, ":")
+	log.Printf("nhc auth: %s\n", executorBasicAuth)
 	var executorBasicAuthEncoded = utils.Base64Encode(executorBasicAuth)
 
 	var headers = map[string]string{}
