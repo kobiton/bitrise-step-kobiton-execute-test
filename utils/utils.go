@@ -18,7 +18,7 @@ func HttpClient() *http.Client {
 
 func SendRequest(client *http.Client, method string, url string, headers map[string]string, payload []byte) []byte {
 	log.Printf("[%s] Sending request to %s", method, url)
-	log.Println("nhc debug")
+	log.Println(headers)
 
 	req, err := http.NewRequest(method, url, bytes.NewBuffer(payload))
 
